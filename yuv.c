@@ -10,8 +10,8 @@ void YUYVtoRGB24(int width, int height, unsigned char* src, unsigned char* dst)
 {
   int nLength = width * height;
   unsigned char YUYV[4], RGB[6];
-  nLengtn <<= 1;
-  int i, j, location;
+  nLength <<= 1;
+  int i, j, Location;
   j = 0;
   for (i = 0; i < nLength; i+=4)
   {
@@ -24,46 +24,26 @@ void YUYVtoRGB24(int width, int height, unsigned char* src, unsigned char* dst)
     /* V */
     YUYV[3] = src[i + 3];
     
-    if (YUYV[0] < 1)
-    {
-      /* b, g, r */
-      RGB[0] = 0;
-      RGB[1] = 0;
-      RGB[2] = 0;
-    }
-    else
-    {
-      /* b, g, r */
-      RGB[2]=YUYV[0]+1.772*(YUYV[1]-128);  
-      RGB[1]=YUYV[0]-0.34413*(YUYV[1]-128)-0.71414*(YUYV[3]-128);
-      RGB[0]=YUYV[0]+1.402*(YUYV[3]-128);
-    }
-    if (YUYV[2] < 0)
-    {
-      /* b, g, r */
-      RGB[3] = 0;
-      RGB[4] = 0;
-      RGB[5] = 0;
-    }
-    else
-    {
-      /* b, g, r */
-      RGB[5]=YUYV[2]+1.772*(YUYV[1]-128);  
-      RGB[4]=YUYV[2]-0.34413*(YUYV[1]-128)-0.71414*(YUYV[3]-128);
-      RGB[3]=YUYV[2]+1.402*(YUYV[3]-128);
-    }
+    RGB[0] = 1.164 * (YUYV[0] - 16) + 1.596 * (YUYV[3] - 128);
+    RGB[1] = 1.164 * (YUYV[0] - 16) - 0.813 * (YUYV[3] - 128) - 0.394 * (YUYV[1] - 128);
+    RGB[2] = 1.164 * (YUYV[0] - 16) + 2.018 * (YUYV[1] - 128);
 
-    for (i = 0; i < 6; ++i)
-    {
-      if (RGB[i] < 0)
-        RGB[i] = 0;
-      if (RGB[i] > 255)
-        RGB[i] = 255;
-    }
-    
-    memcpy(dst + j, RGB, 6);
+    RGB[3] = 1.164 * (YUYV[2] - 16) + 1.596 * (YUYV[3] - 128);
+    RGB[4] = 1.164 * (YUYV[2] - 16) - 0.813 * (YUYV[3] - 128) - 0.394 * (YUYV[1] - 128);
+    RGB[5] = 1.164 * (YUYV[2] - 16) + 2.018 * (YUYV[1] - 128);
 
-    j += 6;
+    int k = 0;
+    for (k = 0; k < 6; ++k)
+    {
+      if (RGB[k] < 0)
+        RGB[k] = 0;
+      if (RGB[k] > 255)
+        RGB[k] = 255;
+    }
+   
+
+   memcpy(dst + j, RGB, 6);
+   j += 6;
   }
 }
 
@@ -74,34 +54,39 @@ void YUYVtoRGB24(int width, int height, unsigned char* src, unsigned char* dst)
  *  * @param height       Height of input RGB file.
  *  * @param url_out      Location of Output BMP file.
  *  */
-int RGB24toBMP(int width, int height, unsigned char* src, const char *bmppath)
+int RGB24toBMP(int width, int height, unsigned char* src, const char* bmppath)
 {
+  #pragma pack(1)
   typedef struct 
   {  
-    long imageSize;
-    long blank;
-    long startPosition;
+    int imageSize;
+    int blank;
+    int startPosition;
   }BmpHead;
+  #pragma pack()
 
+  #pragma pack(1)
   typedef struct
   {
-    long  Length;
-    long  width;
-    long  height;
+    int  Length;
+    int  width;
+    int  height;
     unsigned short  colorPlane;
     unsigned short  bitColor;
-    long  zipFormat;
-    long  realSize;
-    long  xPels;
-    long  yPels;
-    long  colorUse;
-    long  colorImportant;
+    int  zipFormat;
+    int  realSize;
+    int  xPels;
+    int  yPels;
+    int  colorUse;
+    int  colorImportant;
     }InfoHead;
+  #pragma pack()
 
   int i=0,j=0;
   BmpHead m_BMPHeader={0};
   InfoHead  m_BMPInfoHeader={0};
   char bfType[2]={'B','M'};
+  /* the size of bmp header is 54Bit */
   int header_size=sizeof(bfType)+sizeof(BmpHead)+sizeof(InfoHead);
   FILE *fp_bmp=NULL;
 

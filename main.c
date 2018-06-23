@@ -17,6 +17,8 @@
 #include<sys/select.h>
 #include<sys/time.h>
 
+#include "yuv.h"
+
 struct buffer {
   void* start;
   size_t length;
@@ -32,10 +34,17 @@ static int read_frame(void)
   buf.memory = V4L2_MEMORY_MMAP;
   if (-1 == ioctl(cameraFD, VIDIOC_DQBUF, &buf))
     return -1;
-  fputc('.', stdout);
-  fflush(stdout);
+  //fputc('.', stdout);
+  //fflush(stdout);
+  unsigned char* rgb24 = malloc(640*480*3*sizeof(unsigned char));
+  const char* bmppath = "rgb24.bmp";
+  if (!rgb24)
+    return -1;
+  YUYVtoRGB24(640, 480, buffers[buf.index].start, rgb24);
+  RGB24toBMP(640, 480, rgb24, bmppath);
   if (-1 == ioctl(cameraFD, VIDIOC_QBUF, &buf))
     return -1;
+  free(rgb24);
   return 0;
 }
 
@@ -125,7 +134,6 @@ int main()
     return -1;
   }
   int n_buffers;
-  printf("%d\n", req.count);
   for (n_buffers = 0; n_buffers < req.count; ++n_buffers)
   {
     struct v4l2_buffer buf;
@@ -174,7 +182,7 @@ int main()
     return -1;
   }
   // 采集循环
-  uint32_t count = 100;
+  uint32_t count = 1;
   while (count --)
   {
     for(;;)
@@ -185,7 +193,7 @@ int main()
       FD_ZERO(&fds);
       FD_SET(cameraFD, &fds);
       /* timeout */
-      tv.tv_sec = 2;
+      tv.tv_sec = 4;
       tv.tv_usec = 0;
       r = select(cameraFD + 1, &fds, NULL, NULL, &tv);
       if (r == -1)

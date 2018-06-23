@@ -1,0 +1,8 @@
+v4l2:main_rgb_to_bmp.o yuv.o
+	cc -o v4l2 main_rgb_to_bmp.o yuv.o
+yuv.o:yuv.c yuv.h
+	cc -c yuv.c
+main_rgb_to_bmp.o: main_rgb_to_bmp.c yuv.h
+	cc -c main_rgb_to_bmp.c
+clean:
+	rm v4l2 main_rgb_to_bmp.o yuv.o
